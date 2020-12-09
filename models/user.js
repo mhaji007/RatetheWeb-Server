@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
+
 const userSchema = new mongoose.Schema(
   {
     username: {
@@ -62,7 +63,7 @@ userSchema
     // generate salt
     // this.salt refers to salt in schema
     this.salt = this.makeSalt();
-    //encrypt password
+    // encrypt password
     // this.hashed_password is hassed-password in schema
     this.hashed_password = this.encryptPassword(password);
   })

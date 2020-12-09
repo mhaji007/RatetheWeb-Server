@@ -3,6 +3,7 @@
 const express = require("express");
 const router = express.Router();
 
+
 // Import middlewares
 const {register} = require("../controllers/auth");
 
