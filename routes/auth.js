@@ -8,7 +8,7 @@ const router = express.Router();
 const {register} = require("../controllers/auth");
 
 
-router.get("/register", register);
+router.post("/register", register);
 
 // In node any file created is
 // treated as a module

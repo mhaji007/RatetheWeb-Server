@@ -13,7 +13,14 @@ const authRoutes = require("./routes/auth");
 // Global middlewares (to be used on all routes)
 app.use(morgan("dev"));
 app.use(bodyParser.json());
-app.use(cors());
+
+// Wildcard cors - anyone domain has access
+// to the application
+// app.use(cors());
+
+// Restrict cors - only specified domains
+// have access to the application
+app.use(cors({ origin: process.env.CLIENT_URL}));
 // Route middlewares
 app.use("/api", authRoutes)
 
