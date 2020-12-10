@@ -3,12 +3,14 @@
 const express = require("express");
 const router = express.Router();
 
+// import validators
+const { userRegisterValidator } = require("../validators/auth");
+const { runValidation } = require("../validators");
 
-// Import middlewares
-const {register} = require("../controllers/auth");
+// Import controllers
+const { register } = require("../controllers/auth");
 
-
-router.post("/register", register);
+router.post("/register", userRegisterValidator, runValidation, register);
 
 // In node any file created is
 // treated as a module
