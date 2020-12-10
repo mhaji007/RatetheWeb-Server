@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
+const {registerEmailParams} = require("../helpers/email");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -36,48 +37,24 @@ exports.register = (req, res) => {
       }
     );
 
-    // Send email containing the token (hashed name, email, and password)
+    // initialize register email params
+    const params =  registerEmailParams( email, token);
 
-    // What must be sent in email
-    const params = {
-      // Where email is generated from (e.g., admin@yourdomain.com)
-      Source: process.env.EMAIL_FROM,
-      // Where email is sent to (an array of addresses)
-      Destination: {
-        ToAddresses: [email],
-      },
-      // Where recepients reply is going to
-      ReplyToAddresses: [process.env.EMAIL_TO],
-      Message: {
-        Body: {
-          Html: {
-            Charset: "UTF-8",
-            Data: `
-            <html>
-              <h1> Hello ${name},
-              Verify your email to continue</h1>
-             <p >Please use the following link to complete your registration:</p>
-             <p> ${process.env.CLIENT_URL}/auth/activate/${token}</p>
-            </html>
-            `,
-          },
-        },
-        Subject: {
-          Charset: "UTF-8",
-          Data: "Complete Your Registration",
-        },
-      },
-    };
+    // Send email containing the token (hashed name, email, and password)
     const sendEmailOnRegister = ses.sendEmail(params).promise();
 
     sendEmailOnRegister
       .then((data) => {
         console.log("email submitted to SES", data);
-        res.send("Email sent");
+        res.json({
+          message: `Email has been sent to ${email}. Follow the instructions to complete your registration.`
+        })
       })
       .catch((error) => {
         console.log("ses email on register", error);
-        res.send("Email failed");
+        res.json({
+          error: "We could not verify your email. Please try again."
+        })
       });
   });
 };
