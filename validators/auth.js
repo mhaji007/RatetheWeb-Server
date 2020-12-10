@@ -1,9 +1,10 @@
 // File containing an array of checks
 // ran on user input
-// used by index.js in validators
+// used by auth route in routes
 
 const {check} = require("express-validator");
 
+// Array of fields to be checked
 exports.userRegisterValidator = [
   check('name')
   // Make sure it is not empty
