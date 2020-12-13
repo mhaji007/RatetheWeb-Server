@@ -8,12 +8,14 @@ const { userRegisterValidator } = require("../validators/auth");
 const { runValidation } = require("../validators");
 
 // Import controllers
-const { register } = require("../controllers/auth");
+const { register, registerActivate } = require("../controllers/auth");
 
 // Routes
 
 // Apply validation before request reaches the model
 router.post("/register", userRegisterValidator, runValidation, register);
+// Register activation route
+router.post("/register/activate", registerActivate);
 
 // In node any file created is
 // treated as a module

@@ -2,6 +2,7 @@ const User = require("../models/user");
 const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
 const {registerEmailParams} = require("../helpers/email");
+const shortId = require("shortid");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -50,11 +51,56 @@ exports.register = (req, res) => {
           message: `Email has been sent to ${email}. Follow the instructions to complete your registration.`
         })
       })
+      // Without adding status(422) error is not displaying on client
       .catch((error) => {
         console.log("ses email on register", error);
-        res.json({
+        res.status(422).json({
           error: "We could not verify your email. Please try again."
         })
       });
   });
 };
+
+exports.registerActivate = async (req, res) => {
+  const {token} = req.body;
+  // console.log(token);
+  // Verify token for expiration
+  jwt.verify(token, process.env.JWT_ACCOUNT_ACTIVATION, function(err, decoded){
+    if(err) {
+      return res.status(401).json({
+        error: "Expired link. Please try again"
+      })
+    }
+
+    // Decode name, email and password from token
+    const {name, email, password} = jwt.decode(token);
+
+    // Generate a unique username
+    const username = shortId.generate();
+
+    // Check for duplicate users
+    User.findOne({email}).exec((err, user) => {
+      if(user) {
+        // 401 ==> Unauthorized
+        return res.status(401).json({
+          error: "Email is taken."
+        })
+      }
+    // Create new user
+    const newUser = new User({username, name, email, password});
+    newUser.save((err, result) => {
+      if (err) {
+        return res.status(401).json({
+          error: "Error saving user in database. Please try later.",
+        });
+      }
+      return res.json({
+        message: "Registration was successful. Please login."
+      })
+    })
+
+    })
+
+
+  })
+}
