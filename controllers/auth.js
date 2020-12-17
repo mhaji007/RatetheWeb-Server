@@ -151,7 +151,7 @@ exports.login = (req, res) => {
   });
 };
 
-// ================ Auth middlewares ================ //
+// ================ Auth middleware ================ //
 
 // expressJWT middleware to check for valid token and
 // make id of user available to role-based auth middlewares
@@ -168,7 +168,7 @@ exports.login = (req, res) => {
 // in genearating the token, hence req.user._id)
 exports.requireSignin = expressJwt({
   secret: process.env.JWT_SECRET,
-  algorithms: ["RS256"],
+  algorithms: ["HS256"],
 });
 
 
