@@ -1,7 +1,8 @@
-// refactored from auth controllers
-// used in auth.js in controllers to intitialize email parameters
+// Refactored from auth controllers
+// helper function used in auth.js in controllers to intitialize email parameters
 
 // What must be sent in email
+// return oblect is formed based on Amazon ses specs
 exports.registerEmailParams = (email, token) => {
   return {
     // Where email is generated from (e.g., admin@yourdomain.com)

@@ -8,7 +8,12 @@ const { userRegisterValidator, userLoginValidator } = require("../validators/aut
 const { runValidation } = require("../validators");
 
 // Import controllers
-const { register, registerActivate, login } = require("../controllers/auth");
+const {
+  register,
+  registerActivate,
+  login,
+  requireSignin,
+} = require("../controllers/auth");
 
 // Routes
 
@@ -27,8 +32,15 @@ router.post("/register", userRegisterValidator, runValidation, register);
 // use in the database
 router.post("/register/activate", registerActivate);
 
-// 
-router.post("/Login", userLoginValidator, runValidation, login);
+//
+router.post("/login", userLoginValidator, runValidation, login);
+
+// Secret router
+router.post("/secret", requireSignin, (req, res) => {
+  res.json({
+    data: "Secret page for logged in users only"
+  })
+});
 
 // In node any file created is
 // treated as a module

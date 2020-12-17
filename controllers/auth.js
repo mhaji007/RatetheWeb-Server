@@ -3,6 +3,7 @@ const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
 const { registerEmailParams } = require("../helpers/email");
 const shortId = require("shortid");
+const expressJwt = require ("express-jwt")
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -12,6 +13,7 @@ AWS.config.update({
 
 const ses = new AWS.SES({ apiVersion: "2010-12-01" });
 
+// Controller method for sending registration email
 exports.register = (req, res) => {
   const { name, email, password } = req.body;
 
@@ -39,7 +41,7 @@ exports.register = (req, res) => {
       }
     );
 
-    // Initialize register email params
+    // Initialize register email params with email and token
     const params = registerEmailParams(email, token);
 
     // Send email containing the token (hashed name, email, and password)
@@ -48,10 +50,12 @@ exports.register = (req, res) => {
     sendEmailOnRegister
       .then((data) => {
         console.log("Email submitted to SES", data);
+        // Display success message to the user after email is sent
         res.json({
           message: `Email has been sent to ${email}. Follow the instructions to complete your registration.`,
         });
       })
+      // Display error message to the user after email is sent
       // Without adding status(422) error is not displaying on client
       .catch((error) => {
         console.log("ses email on register", error);
@@ -62,6 +66,7 @@ exports.register = (req, res) => {
   });
 };
 
+// Controller method for activating the registered user's account
 exports.registerActivate = async (req, res) => {
   const { token } = req.body;
   // console.log(token);
@@ -134,7 +139,7 @@ exports.login = (req, res) => {
       expiresIn: "7d",
     });
 
-    // Destructure id, name, email and password from verified user
+    // Destructure id, name, email and role from verified user
     const { _id, name, email, role } = user;
     // Send back token and destructured fields to client
     // This information is send back to client to be saved
@@ -145,3 +150,17 @@ exports.login = (req, res) => {
     });
   });
 };
+
+// requireSignin
+// Looks for valid token
+// in the request headers
+// if a valid token found,  it would check the token
+// against the secret and if the same secret
+// was used on signing the token, then it checks
+// for expiry of the token and if that checks out
+// it will make the decoded token (what was used in generating the token)
+//  available on req.user (e.g., here req.user._id)
+exports.requireSignin = expressJwt({
+  secret: process.env.JWT_SECRET,
+  algorithms: ["RS256"],
+});
