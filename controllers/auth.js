@@ -3,7 +3,7 @@ const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
 const { registerEmailParams } = require("../helpers/email");
 const shortId = require("shortid");
-const expressJwt = require ("express-jwt")
+const expressJwt = require("express-jwt");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -146,21 +146,79 @@ exports.login = (req, res) => {
     // in local storage or cookie
     return res.json({
       token,
-      user: { _id, name, email, role},
+      user: { _id, name, email, role },
     });
   });
 };
 
+// ================ Auth middlewares ================ //
+
+// expressJWT middleware to check for valid token and
+// make id of user available to role-based auth middlewares
+
 // requireSignin
 // Looks for valid token
 // in the request headers
-// if a valid token found,  it would check the token
+// if a valid token is found, it will check the token
 // against the secret and if the same secret
-// was used on signing the token, then it checks
+// is used on signing the token, then it will check
 // for expiry of the token and if that checks out
 // it will make the decoded token (what was used in generating the token)
-//  available on req.user (e.g., here req.user._id)
+// available on req.user (e.g., here _id is used
+// in genearating the token, hence req.user._id)
 exports.requireSignin = expressJwt({
   secret: process.env.JWT_SECRET,
   algorithms: ["RS256"],
 });
+
+
+// ================ Role-based auth middlewares ================ //
+
+// Custom middleware to make logged-in user info available
+// This middleware requires that requireSignin runs first
+// so the ._id is available on req.user
+exports.authMiddleWare = (req, res, next) => {
+  const authUserId = req.user._id;
+  User.findOne({ _id: authUserId }).exec((err, user) => {
+    if (err || !user) {
+      console.log(err);
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
+
+    // Make currently logged-in user's
+    // information available on a new
+    // property on req named profile
+    req.profile = user;
+    next();
+  });
+};
+
+
+// Custom middleware to make logged-in admin info available
+// This middleware requires that requireSignin runs first
+// so the ._id is available on req.user
+exports.adminMiddleWare = (req, res, next) => {
+  const authUserId = req.user._id;
+  User.findOne({ _id: authUserId }).exec((err, user) => {
+    if (err || !user) {
+      console.log(err);
+      return res.status(400).json({
+        error: "User not found",
+      });
+    }
+
+    if(user.role !== "admin") {
+      return res.status(400).json({
+        error: "Admin only resource. Access denied."
+      })
+    }
+
+    // Make currently logged-in admin's
+    // information available on a new
+    // property on req named profile
+    req.profile = user;
+    next();
+  });
+};
