@@ -1,9 +1,15 @@
+// Auth specific controller methods
+
 const User = require("../models/user");
 const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
-const { registerEmailParams, forgotPasswordParams } = require("../helpers/email");
+const {
+  registerEmailParams,
+  forgotPasswordParams,
+} = require("../helpers/email");
 const shortId = require("shortid");
 const expressJwt = require("express-jwt");
+const _ = require("lodash");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -11,6 +17,7 @@ AWS.config.update({
   region: process.env.AWS_REGION,
 });
 
+// Create a new stance of SES with specified config from docs
 const ses = new AWS.SES({ apiVersion: "2010-12-01" });
 
 // Controller method for sending registration email
@@ -112,6 +119,8 @@ exports.registerActivate = async (req, res) => {
   );
 };
 
+// Controller method for logging-in the user
+// (verifying email and password, creating token and sending back user info)
 exports.login = (req, res) => {
   const { email, password } = req.body;
   //  console.table({ email, password });
@@ -221,6 +230,9 @@ exports.adminMiddleWare = (req, res, next) => {
   });
 };
 
+// ============================================================== //
+
+// Controller method for sending forgot password email
 exports.forgotPassword = (req, res) => {
   // Query data base to see whether user's email exist
   const { email } = req.body;
@@ -236,11 +248,11 @@ exports.forgotPassword = (req, res) => {
       process.env.JWT_RESET_PASSWORD,
       { expiresIn: "10m" }
     );
-    //  and send this token via email to the user.
+    // and send this token via email to the user.
     // Initialize register email params with email and token
     const params = forgotPasswordParams(email, token);
-    //  At the same time populate resetPasswordLink
-    // field for that user in the database
+    // At the same time populate resetPasswordLink field with
+    // the generated token  for that user in the database
     return user.updateOne({ resetPasswordLink: token }, (err, success) => {
       if (err) {
         return res.status(400).json({
@@ -250,7 +262,7 @@ exports.forgotPassword = (req, res) => {
       const sendEmail = ses.sendEmail(params).promise();
       sendEmail
         .then((data) => {
-          console.log("ses reset passwprd success", data);
+          console.log("ses reset password success", data);
           return res.json({
             message: `Email has been sent to ${email}. Click on the link to reset your password`,
           });
@@ -265,4 +277,54 @@ exports.forgotPassword = (req, res) => {
   });
 };
 
-exports.resetPassword = (req, res) => {};
+// Controller method for resetting user's password
+exports.resetPassword = (req, res) => {
+  const { resetPasswordLink, newPassword } = req.body;
+  if (resetPasswordLink) {
+    // Check for token (resetPasswordLink) expiry
+    // using the built-in jwt verify mehtod
+    // By default this method checks both for a valid
+    // token and the expiry of this token
+    jwt.verify(
+      resetPasswordLink,
+      process.env.JWT_RESET_PASSWORD,
+      (err, success) => {
+        if (err) {
+          return res.status(400).json({
+            error: "This link has expired. Please try again",
+          });
+        }
+
+        User.findOne({ resetPasswordLink }).exec((err, user) => {
+          if (err || !user) {
+            return res.status(400).json({
+              error: "Invalid token. Please try again",
+            });
+          }
+
+          const updatedFields = {
+            password: newPassword,
+            resetPasswordLink: "",
+          };
+          // Extend the found user object with
+          // the updateFields object using lodash's
+          // extend method
+          user = _.extend(user, updatedFields)
+
+          // Save the updated user object
+          // to database
+          user.save((err, result) => {
+            if (err) {
+              return res.status(400).json({
+                error: "Password reset failed. Please try again"
+              })
+            }
+            res.json({
+              message:"Your password has been updated. You may proceed to login with your new credentials"
+            })
+          })
+        });
+      }
+    );
+  }
+};
