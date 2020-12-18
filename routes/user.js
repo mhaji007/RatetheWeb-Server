@@ -15,6 +15,11 @@ const {read} = require("../controllers/user");
 
 // Routes
 
+// If we want to display a certain page to either
+// admin or subscriber(user) we will make use
+// of the following endpoints before displaying
+// the page to user
+
 // requireSignin makes user's id available on req
 // and in turn authMiddleware will make user's information
 // available on req.profile and only then read controller

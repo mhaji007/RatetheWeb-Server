@@ -1,7 +1,7 @@
 const User = require("../models/user");
 const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
-const { registerEmailParams } = require("../helpers/email");
+const { registerEmailParams, forgotPasswordParams } = require("../helpers/email");
 const shortId = require("shortid");
 const expressJwt = require("express-jwt");
 
@@ -171,7 +171,6 @@ exports.requireSignin = expressJwt({
   algorithms: ["HS256"],
 });
 
-
 // ================ Role-based auth middlewares ================ //
 
 // Custom middleware to make logged-in user info available
@@ -195,7 +194,6 @@ exports.authMiddleWare = (req, res, next) => {
   });
 };
 
-
 // Custom middleware to make logged-in admin info available
 // This middleware requires that requireSignin runs first
 // so the ._id is available on req.user
@@ -209,10 +207,10 @@ exports.adminMiddleWare = (req, res, next) => {
       });
     }
 
-    if(user.role !== "admin") {
+    if (user.role !== "admin") {
       return res.status(400).json({
-        error: "Admin only resource. Access denied."
-      })
+        error: "Admin only resource. Access denied.",
+      });
     }
 
     // Make currently logged-in admin's
@@ -222,3 +220,49 @@ exports.adminMiddleWare = (req, res, next) => {
     next();
   });
 };
+
+exports.forgotPassword = (req, res) => {
+  // Query data base to see whether user's email exist
+  const { email } = req.body;
+  User.findOne({ email }).exec((err, user) => {
+    if (err || !user) {
+      return res.status(400).json({
+        error: "No user associated with this email found in the database",
+      });
+    }
+    // If found generate a jsonweb token
+    const token = jwt.sign(
+      { name: user.name },
+      process.env.JWT_RESET_PASSWORD,
+      { expiresIn: "10m" }
+    );
+    //  and send this token via email to the user.
+    // Initialize register email params with email and token
+    const params = forgotPasswordParams(email, token);
+    //  At the same time populate resetPasswordLink
+    // field for that user in the database
+    return user.updateOne({ resetPasswordLink: token }, (err, success) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Password reset failed. Please try again later",
+        });
+      }
+      const sendEmail = ses.sendEmail(params).promise();
+      sendEmail
+        .then((data) => {
+          console.log("ses reset passwprd success", data);
+          return res.json({
+            message: `Email has been sent to ${email}. Click on the link to reset your password`,
+          });
+        })
+        .catch((error) => {
+          console.log("ses reset passwprd failed", error);
+          res.status(422).json({
+            error: "We could not verify your email. Please try again later.",
+          });
+        });
+    });
+  });
+};
+
+exports.resetPassword = (req, res) => {};

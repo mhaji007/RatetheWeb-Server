@@ -35,3 +35,36 @@ exports.registerEmailParams = (email, token) => {
     },
   };
 };
+
+exports.forgotPasswordParams = (email, token) => {
+  return {
+    // Where email is generated from (e.g., admin@yourdomain.com)
+    Source: process.env.EMAIL_FROM,
+    // Where email is sent to (an array of addresses)
+    Destination: {
+      ToAddresses: [email],
+    },
+    // Where recepients reply is going to
+    ReplyToAddresses: [process.env.EMAIL_TO],
+    Message: {
+      Body: {
+        Html: {
+          Charset: "UTF-8",
+          Data: `
+            <html>
+              <h1>
+              Reset Password
+              </h1>
+             <p >Please use the following link to reset your passowrd:</p>
+             <p> ${process.env.CLIENT_URL}/auth/password/reset/${token}</p>
+            </html>
+            `,
+        },
+      },
+      Subject: {
+        Charset: "UTF-8",
+        Data: "Complete Your Registration",
+      },
+    },
+  };
+};

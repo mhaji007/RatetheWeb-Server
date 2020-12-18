@@ -4,7 +4,13 @@ const express = require("express");
 const router = express.Router();
 
 // Import validators
-const { userRegisterValidator, userLoginValidator } = require("../validators/auth");
+const {
+  userRegisterValidator,
+  userLoginValidator,
+  forgotPasswordValidator,
+  resetPasswordValidator,
+} = require("../validators/auth");
+
 const { runValidation } = require("../validators");
 
 // Import controllers
@@ -13,6 +19,8 @@ const {
   registerActivate,
   login,
   requireSignin,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/auth");
 
 // Routes
@@ -35,12 +43,26 @@ router.post("/register/activate", registerActivate);
 //
 router.post("/login", userLoginValidator, runValidation, login);
 
-// Secret router
-router.post("/secret", requireSignin, (req, res) => {
-  res.json({
-    data: "Secret page for logged in users only"
-  })
-});
+router.put(
+  "/forgot-password",
+  forgotPasswordValidator,
+  runValidation,
+  forgotPassword
+);
+
+router.put(
+  "/reset-password",
+  resetPasswordValidator,
+  runValidation,
+  resetPassword
+);
+
+// // Secret router
+// router.post("/secret", requireSignin, (req, res) => {
+//   res.json({
+//     data: "Secret page for logged in users only"
+//   })
+// });
 
 // In node any file created is
 // treated as a module
