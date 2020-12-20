@@ -19,10 +19,10 @@ const categoryShema = new mongoose.Schema(
     // Image is saved in AWS and
     // the URL of the uploaded image
     // is saved in the database
+    // AWS S3 (Simple Storage Service) gives us a url
+    // key can be used to delete
+    // a given image
     image: {
-      // AWS S3 (Simple Storage Service) gives us a url
-      // key can be used to delete
-      // a given image
       url: String,
       key: String,
     },
