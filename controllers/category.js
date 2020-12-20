@@ -1,10 +1,12 @@
 const Category = require("../models/category");
 // Helps in slugifying any string
 const slugify = require("slugify");
+// For receiving and parsing form data
 const formidable = require("formidable");
 // For generating unique keys for images
 // to be stored in the database
 const { v4: uuidv4 } = require("uuid");
+// For uploading images to S3
 const AWS = require("aws-sdk");
 // For reading the file synchronously
 const fs = require("fs");
@@ -17,14 +19,15 @@ const s3 = new AWS.S3({
   region: process.env.AWS_REGION,
 });
 
+// Controller method for creating a category
 exports.create = (req, res) => {
   // Retrieve form data
   let form = new formidable.IncomingForm();
   // Form data will be coming in on req
   // but since this data is not in JSON
-  // we user formidable to parse the request
-  // Parse data to retrieve the fields
-  // Title and content will be available as fields
+  // we user formidable to parse the request.
+  // It parses data to retrieve the fields.
+  // Title and content will be available as fields.
   // Image will be availble as files
   form.parse(req, (err, fields, files) => {
     if (err) {
@@ -34,42 +37,59 @@ exports.create = (req, res) => {
     }
     // console.table({data, err, fields, files});
     const { name, content } = fields;
-    console.log("Name and Content ===>",name, content)
+    // The naming here is important
+    // When sending from client
+    // the same name (image) should be used
     const { image } = files;
     // Generate a unique slug
-    console.log("files ========>",files)
-    console.log("Image ========>",image)
     const slug = slugify(name);
-
+    // Instantiate and new category
     let category = new Category({ name, content, slug });
-
+    // Image validation
+    // (not necessary since image will
+    // later be resized client sized)
     if (image.size > 2000000) {
       return res.status(400).json({
         error: "Image should be less thna 2mb",
       });
     }
+
     // Upload image to s3 and add the url to category
 
-    // Create params
+    // Create params (a template for sending images)
     const params = {
+      // Which bucket to upload to
       Bucket: "ratetheweb",
+      // category is an (optional) folder
+      // created inside the bucket to have all
+      // images inside a folder
       Key: `category/${uuidv4()}`,
+      // The actual image sent in body
       // Wrap image.path with readFileSync
       // so that the entire image path is available
       // (entire file is read from start to finish)
       // by the time the image is uploaded
       Body: fs.readFileSync(image.path),
+      // Access Control Level: set in bucket permissions
+      // makes it possible for users to view the image
+      // without including any special authorizations in headers
       ACL: "public-read",
+      // Type of image uploaded
       ContentType: "image/jpg",
     };
+    // Upload the image using a new instance of s3
     s3.upload(params, (err, data) => {
       if (err) {
         console.log(err);
         res.status(400).json({ error: "Upload to s3 failed" });
       }
       console.log("AWS upload response data", data);
+      // The url returned from s3 is available on Location
+      // set url to image.url from database
       category.image.url = data.Location;
-      category.image.key = data.key;
+      // The image key returned from s3 is available on key
+      // set key to image.key from database
+      category.image.key = data.Key;
 
       // Save to database
       category.save((err, success) => {
@@ -84,6 +104,7 @@ exports.create = (req, res) => {
 };
 
 // Create controller prior to using formidable
+// using hardcoded image
 
 // exports.create = (req, res) => {
 //   const {name, content} = req.body;
