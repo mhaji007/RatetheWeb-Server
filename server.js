@@ -26,7 +26,12 @@ mongoose
 
 // Global middlewares (to be used on all routes)
 app.use(morgan("dev"));
-app.use(bodyParser.json());
+
+// default limit 1mb
+// app.use(bodyParser.json());
+
+// JSON data's limit by default is 1mb
+app.use(bodyParser.json({limit: "5mb", type:"application/json"}));
 
 // Wildcard cors - anyone domain has access
 // to the application
