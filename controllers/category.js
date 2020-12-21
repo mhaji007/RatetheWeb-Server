@@ -87,6 +87,11 @@ exports.create = (req, res) => {
     // set key to image.key from database
     category.image.key = data.Key;
 
+    // Save logged-in user's id as postedBy
+    // user._id is made available on req via
+    //requireSignin auth middleware
+    category.postedBy = req.user._id;
+
     // Save to database
     category.save((err, success) => {
       if (err) {
