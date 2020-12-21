@@ -35,6 +35,8 @@ const categoryShema = new mongoose.Schema(
       min: [20, "Content cannot be less than 20 characters"],
       max: [2000000, "Content cannot exceed 2MB"],
     },
+    // logged in user's id is saved
+    // as a postedBy
     postedBy: {
       type: ObjectId,
       ref: "User",

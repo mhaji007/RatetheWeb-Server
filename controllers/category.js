@@ -28,8 +28,8 @@ exports.create = (req, res) => {
   const { name, image, content } = req.body;
 
   // Image data
-  // image is uploaded and converted to binary data
-  // we need to create a new base-64 data using buffer
+  // image is uploaded from client and converted to binary data client-side
+  // we need to create a new base-64 data using buffer since
   // base-64 image format looks like the following:
   // data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACgAAAAaqCAYAAAACcyMkAAABS
   // We need to omit the data:image/png;base64, part
