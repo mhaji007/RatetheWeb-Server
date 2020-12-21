@@ -2,20 +2,40 @@ const Link = require("../models/link");
 const slugify = require("slugify");
 
 exports.create = (req, res) => {
+  const { title, url, categories, type, medium } = req.body;
+  // console.table({ title, url, categories, type, medium });
+  // No need to slufiy the link
+  // as the links submitted by the user
+  // are already in valid format
+  const slug = url;
+  let link = new Link({ title, url, categories, type, medium, slug });
+  // Assign the user who created the link
+  link.postedBy = req.user._id;
+  // Retrieve all categories
+  let arrayOfCategories = categories && categories.split(",");
+  link.categories = arrayOfCategories;
+  // Save link to database
+  link.save((err, data) => {
+    if (err) {
+      return res.status(400).json({
+        error: "Link already exists",
+      });
+    }
+    res.json(data);
+  });
+};
 
-  const {title, url, categories, type, medium} = req.body;
-  console.table({ title, url, categories, type, medium });
-
-}
 exports.list = (req, res) => {
+  Link.find({}).exec((err, data) => {
+    if (err) {
+      res.status(400).json({
+        error: "Links were not found",
+      });
 
-}
-exports.read = (req, res) => {
-
-}
-exports.update = (req, res) => {
-
-}
-exports.remove = (req, res) => {
-
-}
+    }
+    res.json(data);
+  });
+};
+exports.read = (req, res) => {};
+exports.update = (req, res) => {};
+exports.remove = (req, res) => {};
