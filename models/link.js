@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { ObjectId } = mongoose.Schma;
+const { ObjectId } = mongoose.Schema;
 
 const linkSchema = new mongoose.Schema(
   {
@@ -36,7 +36,7 @@ const linkSchema = new mongoose.Schema(
     },
     // Associate each link to categories
     // each link may fall into several
-    // categories 
+    // categories
     categories: [
       {
         type: ObjectId,
