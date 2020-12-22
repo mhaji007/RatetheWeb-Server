@@ -1,4 +1,5 @@
 const Category = require("../models/category");
+const Link = require("../models/link");
 // Helps in slugifying any string
 const slugify = require("slugify");
 // For receiving and parsing form data
@@ -240,8 +241,51 @@ exports.list = (req, res) => {
     res.json(data);
   });
 };
+
+// Retrieve a single category
+// and related links
 exports.read = (req, res) => {
-  //
+  const { slug } = req.params;
+
+  // If limit was not sent in by client use 10
+  let limit = req.body.limit ? parseInt(limit) : 10;
+  // If skip was not sent in by client use 0
+  let skip = req.body.skip ? parseInt(skip) : 0;
+
+  Category.findOne({ slug })
+    // Populate postedBy and grab id,
+    // name and username out of user
+    .populate("postedBy", "_id name username")
+    .exec((err, category) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Category could not load",
+        });
+      }
+      // The following only returns
+      // a single category data (name, content, image
+      // that is used to display at the top).
+      // but the page needs to display all the related
+      // links associated with the selected category as well
+
+      // res.json(category);
+
+      // Find the link based on the categories array
+      Link.find({ categories: category })
+        .populate("postedBy", "_id name username")
+        .populate("categories", "name")
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip)
+        .exec((err, links) => {
+          if (err) {
+            return res.status(400).json({
+              error: "Could not load associated links"
+            })
+          }
+          res.json({category, links})
+        })
+    });
 };
 exports.update = (req, res) => {
   //
