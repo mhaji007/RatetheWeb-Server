@@ -11,10 +11,16 @@ exports.create = (req, res) => {
   let link = new Link({ title, url, categories, type, medium, slug });
   // Assign the user who created the link
   link.postedBy = req.user._id;
-  // Retrieve all categories
-  let arrayOfCategories = categories && categories.split(",");
-  link.categories = arrayOfCategories;
+
+  // Already sending comma separated
+  // array of ids therefore the following
+  // commented lines is not necessary
+
+  // // Retrieve all categories (required if using Postman)
+  // let arrayOfCategories = categories && categories.split(",");
+  // link.categories = arrayOfCategories;
   // Save link to database
+
   link.save((err, data) => {
     if (err) {
       return res.status(400).json({
