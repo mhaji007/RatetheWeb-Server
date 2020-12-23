@@ -35,7 +35,7 @@ router.post(
   create
 );
 router.get("/categories", list);
-router.get("/category/:slug", read);
+router.post("/category/:slug", read);
 router.put(
   "/category/:slug",
   categoryUpdateValidator,

@@ -248,9 +248,12 @@ exports.read = (req, res) => {
   const { slug } = req.params;
 
   // If limit was not sent in by client use 10
-  let limit = req.body.limit ? parseInt(limit) : 10;
+  let limit = req.body.limit ? parseInt(req.body.limit) : 10;
+
+  console.log("Limit received on server ====>", limit)
+
   // If skip was not sent in by client use 0
-  let skip = req.body.skip ? parseInt(skip) : 0;
+  let skip = req.body.skip ? parseInt(req.body.skip) : 0;
 
   Category.findOne({ slug })
     // Populate postedBy and grab id,
@@ -287,6 +290,9 @@ exports.read = (req, res) => {
         })
     });
 };
+
+
+
 exports.update = (req, res) => {
   //
 };
