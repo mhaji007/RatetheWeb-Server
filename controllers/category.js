@@ -272,7 +272,7 @@ exports.read = (req, res) => {
 
       // res.json(category);
 
-      // Find the link based on the categories array
+      // Find the links based on the categories array
       Link.find({ categories: category })
         .populate("postedBy", "_id name username")
         .populate("categories", "name")
@@ -293,8 +293,72 @@ exports.read = (req, res) => {
 
 
 exports.update = (req, res) => {
-  //
+  const { slug } = req.params;
+  // destructure nam, content and image from body sent by client
+  // Note: admin might or might not provide a new image (i.e. update category
+  // with or without a new image)
+  const { name, image, content } = req.body;
+
+  // Find category based on slug and category name and content
+  Category.findOneAndUpdate({ slug }, { name, content }, { new: true }).exec(
+    (err, updated) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Could not find category to update",
+        });
+      }
+      console.log("Updated", updated);
+      // Check whether image is supplied
+      //(i.i., there is a value for image destructred from body)
+      if (image) {
+        // Remove the existing image from s3 before uploading new/updated one
+        const deleteParams = {
+          Bucket: "ratetheweb",
+          Key: `category/${updated.image.key}`,
+        };
+
+        s3.deleteObject(deleteParams, function (err, data) {
+          if (err) console.log("S3 delete error during update", err);
+          else console.log("S3 deleted during update", data);
+        });
+
+        // Handle upload image
+        const params = {
+          Bucket: "ratetheweb",
+          Key: `category/${uuidv4()}.${type}`,
+          Body: base64Data,
+          ACL: "public-read",
+          ContentEncoding: "base64",
+          ContentType: `image/${type}`,
+        };
+
+        s3.upload(params, (err, data) => {
+          if (err) {
+            console.log(err);
+            res.status(400).json({ error: "Upload to s3 failed" });
+          }
+          console.log("AWS upload res data", data);
+          updated.image.url = data.Location;
+          updated.image.key = data.Key;
+
+          // Save to db
+          updated.save((err, success) => {
+            if (err) {
+              console.log(err);
+              res.status(400).json({ error: "Duplicate category" });
+            }
+            res.json(success);
+          });
+        });
+        // If there were no image provided
+        // (i.e., admin is just updating name and content)
+      } else {
+        res.json(updated);
+      }
+    }
+  );
 };
+
 exports.remove = (req, res) => {
   //
 };

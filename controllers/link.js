@@ -1,10 +1,11 @@
 const Link = require("../models/link");
 const slugify = require("slugify");
 
+// Endpoint for creating a link
 exports.create = (req, res) => {
   const { title, url, categories, type, medium } = req.body;
   // console.table({ title, url, categories, type, medium });
-  // No need to slufiy the link
+  // No need to slugify the link
   // as the links submitted by the user
   // are already in valid format
   const slug = url;
@@ -30,7 +31,7 @@ exports.create = (req, res) => {
     res.json(data);
   });
 };
-
+// Endpoint for retrieving all the links
 exports.list = (req, res) => {
   Link.find({}).exec((err, data) => {
     if (err) {
@@ -41,13 +42,14 @@ exports.list = (req, res) => {
     res.json(data);
   });
 };
+
 exports.read = (req, res) => {};
 exports.update = (req, res) => {};
 exports.remove = (req, res) => {};
 
 // Endpoint for handling click count
 exports.clickCount = (req, res) => {
-  // Retrieve link Id from client
+  // Retrieve link Id (slug) from client
   const { linkId } = req.body;
   // Find the link with the id retrieved and increment the click count by one
   // and return the new link object back to client
@@ -57,9 +59,9 @@ exports.clickCount = (req, res) => {
         error: "Could not view count"
       })
     }
+    // Sometime return is used and sometimes not
+    // when return keyword is encountered the code after is not executed
+    // When returning json response return keyword is not required
     res.json(result);
-   // Sometime return is used and sometimes not
-   // when return keyword is encountered the code after is not executed
-   // When returning json response return keyword is not required
   })
 };
