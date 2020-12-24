@@ -22,9 +22,13 @@ const {
   read,
   update,
   remove,
+  clickCount
 } = require("../controllers/link");
 
 // Routes
+
+// Note: put absolute routes before
+// routes with route parameters
 
 router.post(
   "/link",
@@ -35,6 +39,8 @@ router.post(
   create
 );
 router.get("/links", list);
+router.put("/click-count", clickCount);
+
 router.get("/link/:slug", read);
 router.put(
   "/link/:slug",

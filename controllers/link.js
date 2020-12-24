@@ -37,7 +37,6 @@ exports.list = (req, res) => {
       res.status(400).json({
         error: "Links were not found",
       });
-
     }
     res.json(data);
   });
@@ -45,3 +44,22 @@ exports.list = (req, res) => {
 exports.read = (req, res) => {};
 exports.update = (req, res) => {};
 exports.remove = (req, res) => {};
+
+// Endpoint for handling click count
+exports.clickCount = (req, res) => {
+  // Retrieve link Id from client
+  const { linkId } = req.body;
+  // Find the link with the id retrieved and increment the click count by one
+  // and return the new link object back to client
+  Link.findByIdAndUpdate(linkId, { $inc: { clicks: 1 } }, { new: true }).exec((err, result) => {
+    if (err) {
+      return res.status(400).json({
+        error: "Could not view count"
+      })
+    }
+    res.json(result);
+   // Sometime return is used and sometimes not
+   // when return keyword is encountered the code after is not executed
+   // When returning json response return keyword is not required
+  })
+};

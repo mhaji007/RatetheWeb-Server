@@ -245,12 +245,11 @@ exports.list = (req, res) => {
 // Retrieve a single category
 // and related links
 exports.read = (req, res) => {
+  // Query parameter is available on req.params.slug
   const { slug } = req.params;
 
   // If limit was not sent in by client use 10
   let limit = req.body.limit ? parseInt(req.body.limit) : 10;
-
-  console.log("Limit received on server ====>", limit)
 
   // If skip was not sent in by client use 0
   let skip = req.body.skip ? parseInt(req.body.skip) : 0;
