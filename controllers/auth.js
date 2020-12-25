@@ -172,7 +172,7 @@ exports.login = (req, res) => {
 // against the secret and if the same secret
 // is used on signing the token, then it will check
 // for expiry of the token and if that checks out
-// it will make the decoded token (what was used in generating the token)
+// it will make the decoded token (what was used in generating the json web token)
 // available on req.user (e.g., here _id is used
 // in genearating the token, hence req.user._id)
 exports.requireSignin = expressJwt({
