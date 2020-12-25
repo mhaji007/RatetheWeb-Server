@@ -44,8 +44,38 @@ exports.list = (req, res) => {
 };
 
 exports.read = (req, res) => {};
-exports.update = (req, res) => {};
-exports.remove = (req, res) => {};
+
+exports.update = (req, res) => {
+  const { id } = req.params;
+  const { title, url, categories, type, medium } = req.body;
+
+  const updatedLink = { title, url, categories, type, medium };
+
+  Link.findOneAndUpdate({ _id: id }, updatedLink, { new: true }).exec(
+    (err, updated) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Error updating the link",
+        });
+      }
+      res.json(updated);
+    }
+  );
+};
+
+exports.remove = (req, res) => {
+  const { id } = req.params;
+  Link.findOneAndRemove({ _id: id }).exec((err, data) => {
+    if (err) {
+      return res.status(400).json({
+        error: "Error removing the link",
+      });
+    }
+    res.json({
+      message: "Link has been removed successfully",
+    });
+  });
+};
 
 // Endpoint for handling click count
 exports.clickCount = (req, res) => {
@@ -53,15 +83,17 @@ exports.clickCount = (req, res) => {
   const { linkId } = req.body;
   // Find the link with the id retrieved and increment the click count by one
   // and return the new link object back to client
-  Link.findByIdAndUpdate(linkId, { $inc: { clicks: 1 } }, { new: true }).exec((err, result) => {
-    if (err) {
-      return res.status(400).json({
-        error: "Could not view count"
-      })
+  Link.findByIdAndUpdate(linkId, { $inc: { clicks: 1 } }, { new: true }).exec(
+    (err, result) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Could not view count",
+        });
+      }
+      // Sometime return is used and sometimes not
+      // when return keyword is encountered the code after is not executed
+      // When returning json response return keyword is not required
+      res.json(result);
     }
-    // Sometime return is used and sometimes not
-    // when return keyword is encountered the code after is not executed
-    // When returning json response return keyword is not required
-    res.json(result);
-  })
+  );
 };
