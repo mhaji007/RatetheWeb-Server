@@ -299,6 +299,22 @@ exports.update = (req, res) => {
   // with or without a new image)
   const { name, image, content } = req.body;
 
+  // Image data
+  // image is uploaded from client and converted to binary data client-side
+  // we need to create a new base-64 data using buffer since
+  // base-64 image format looks like the following:
+  // data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACgAAAAaqCAYAAAACcyMkAAABS
+  // We need to omit the data:image/png;base64, part
+  const base64Data = new Buffer.from(
+    image.replace(/^data:image\/\w+;base64,/, ""),
+    "base64"
+  );
+  // Image type
+  //(optional - previosuly using fromData image uploaded without type in params ==> Key: `category/${uuidv4()})
+  // first split ==> ["data:image/png", "rest of the image format"]
+  // second split ==> ["data:image", "png"]
+  const type = image.split(";")[0].split("/")[1];
+
   // Find category based on slug and category name and content
   Category.findOneAndUpdate({ slug }, { name, content }, { new: true }).exec(
     (err, updated) => {
