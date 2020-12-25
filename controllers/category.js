@@ -314,7 +314,7 @@ exports.update = (req, res) => {
         // Remove the existing image from s3 before uploading new/updated one
         const deleteParams = {
           Bucket: "ratetheweb",
-          Key: `category/${updated.image.key}`,
+          Key: `${updated.image.key}`,
         };
 
         s3.deleteObject(deleteParams, function (err, data) {
@@ -360,5 +360,28 @@ exports.update = (req, res) => {
 };
 
 exports.remove = (req, res) => {
-  //
+  const {slug} = req.params;
+
+  Category.findOneAndRemove({slug}).exec((err, data) => {
+    if (err) {
+      console.log(err);
+      return res.status(400).json({
+        error: "Could not delete category",
+      });
+    }
+    // Remove the existing image from s3 before uploading new/updated one
+    // Remove the category but keep the key while deleting
+    const deleteParams = {
+      Bucket: "ratetheweb",
+      Key: `${data.image.key}`,
+    };
+
+    s3.deleteObject(deleteParams, function (err, data) {
+      if (err) console.log("S3 delete error", err);
+      else console.log("S3 deleted", data);
+    });
+    res.json({
+      message: `Category was successfully deleted`
+    })
+  })
 };

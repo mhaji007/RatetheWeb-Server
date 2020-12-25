@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Schema;
 
-const categoryShema = new mongoose.Schema(
+const categorySchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -13,7 +13,6 @@ const categoryShema = new mongoose.Schema(
       type: String,
       lowercase: true,
       unique: true,
-      required: true,
       index: true,
     },
     // Image is saved in AWS and
@@ -45,4 +44,4 @@ const categoryShema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Category", categoryShema);
+module.exports = mongoose.model("Category", categorySchema);
