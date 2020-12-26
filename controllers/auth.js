@@ -1,6 +1,7 @@
-// Auth specific controller methods
+// Auth specific controller methods and middlewares
 
 const User = require("../models/user");
+const Link = require("../models/link");
 const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
 const {
@@ -328,3 +329,28 @@ exports.resetPassword = (req, res) => {
     );
   }
 };
+
+
+// Custom middleware for controlling link update and delete functionalities of non-admin users
+// Users that are not admin should only be able to update or delete their own links
+// This middleware prevents a user to modify links posted by others (e.g., through postman, etc.)
+exports.CanUpdateDeleteLink = (req, res, next) =>{
+  // This middleware only runs when updating or deleting links
+  // and by that time we have access to id on req
+  const {id} =req.params;
+  Link.findOne({_id:id}).exec((err, data) => {
+    if (err) {
+      return res.status(400).json({
+        error: "Could not find link"
+      })
+    }
+    let authorizedUser = data.postedBy._id.toString() === req.user._id.toString()
+
+    if (!authorizedUser) {
+      return res.status(401).json({
+        error:"You are not authorize to access this resource"
+      })
+    }
+    next();
+  })
+}
