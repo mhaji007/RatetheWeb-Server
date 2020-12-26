@@ -12,7 +12,7 @@ const {
 const { runValidation } = require("../validators");
 
 // Import middlewares
-const { authMiddleWare, requireSignin } = require("../controllers/auth");
+const { authMiddleWare, adminMiddleWare, requireSignin } = require("../controllers/auth");
 
 // Import controllers
 
@@ -38,7 +38,10 @@ router.post(
   authMiddleWare,
   create
 );
-router.get("/links", list);
+
+
+router.post("/links", requireSignin, adminMiddleWare, list);
+
 router.put("/click-count", clickCount);
 
 router.get("/link/:id", read);

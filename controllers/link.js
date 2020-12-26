@@ -33,14 +33,26 @@ exports.create = (req, res) => {
 };
 // Endpoint for retrieving all the links
 exports.list = (req, res) => {
-  Link.find({}).exec((err, data) => {
-    if (err) {
-      res.status(400).json({
-        error: "Links were not found",
-      });
+  // If limit was not sent in by client use 10
+  let limit = req.body.limit ? parseInt(req.body.limit) : 10;
+
+  // If skip was not sent in by client use 0
+  let skip = req.body.skip ? parseInt(req.body.skip) : 0;
+
+  Link.find({})
+  .populate("postedBy", "name")
+  .populate("categories", "name slug")
+  .sort({createdAt: -1})
+  .skip(skip)
+  .limit(limit)
+  .exec((err, data) => {
+    if(err) {
+      return res.status(400).json({
+        error: "Could not list links"
+      })
     }
     res.json(data);
-  });
+  })
 };
 
 exports.read = (req, res) => {
