@@ -18,18 +18,19 @@ AWS.config.update({
   region: process.env.AWS_REGION,
 });
 
-// Create a new stance of SES with specified config from docs
+// Create a new instance of SES with specified config from SES docs
 const ses = new AWS.SES({ apiVersion: "2010-12-01" });
 
 // Controller method for sending registration email
 exports.register = (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, categories } = req.body;
 
   // Check if user already exists in database
   User.findOne({ email }).exec((err, user) => {
     if (user) {
       return res.status(400).json({
-        err: "Email is taken. Please choose another email.",
+        err:
+          "A user associated with this email already exists. Please choose another email or log in.",
       });
     }
     // Generate registration token with username, email and password.
@@ -37,12 +38,12 @@ exports.register = (req, res) => {
     // This information will be hashesd using jwt token
     // and sent back to user's email as a clickable link
     // and when clicked the user is redirected to the frontend
-    // on frontend this token is taken from the url and sent
+    // where this token is taken from the url and sent
     // back to the server, therefore ensuring a user with a
     // valid email is saved in the database
 
     const token = jwt.sign(
-      { name, email, password },
+      { name, email, password, categories },
       process.env.JWT_ACCOUNT_ACTIVATION,
       {
         expiresIn: "10m",
@@ -90,7 +91,7 @@ exports.registerActivate = async (req, res) => {
       }
 
       // Decode name, email and password from token
-      const { name, email, password } = jwt.decode(token);
+      const { name, email, password, categories } = jwt.decode(token);
 
       // Generate a unique username
       const username = shortId.generate();
@@ -104,9 +105,16 @@ exports.registerActivate = async (req, res) => {
           });
         }
         // Create new user
-        const newUser = new User({ username, name, email, password });
+        const newUser = new User({
+          username,
+          name,
+          email,
+          password,
+          categories,
+        });
         newUser.save((err, result) => {
           if (err) {
+            console.log(err);
             return res.status(401).json({
               error: "Error saving user in database. Please try again later.",
             });
@@ -207,6 +215,9 @@ exports.authMiddleWare = (req, res, next) => {
 // Custom middleware to make logged-in admin info available
 // This middleware requires that requireSignin runs first
 // so the ._id is available on req.user
+
+// If user manually changes the local storage role to admin
+// this middleware prevents access to admin resources
 exports.adminMiddleWare = (req, res, next) => {
   const authUserId = req.user._id;
   User.findOne({ _id: authUserId }).exec((err, user) => {
@@ -216,7 +227,7 @@ exports.adminMiddleWare = (req, res, next) => {
         error: "User not found",
       });
     }
-
+    // Check user's role on server
     if (user.role !== "admin") {
       return res.status(400).json({
         error: "Admin only resource. Access denied.",
@@ -235,7 +246,7 @@ exports.adminMiddleWare = (req, res, next) => {
 
 // Controller method for sending forgot password email
 exports.forgotPassword = (req, res) => {
-  // Query data base to see whether user's email exist
+  // Query database to see whether user's email exist
   const { email } = req.body;
   User.findOne({ email }).exec((err, user) => {
     if (err || !user) {
@@ -310,47 +321,48 @@ exports.resetPassword = (req, res) => {
           // Extend the found user object with
           // the updateFields object using lodash's
           // extend method
-          user = _.extend(user, updatedFields)
+          user = _.extend(user, updatedFields);
 
           // Save the updated user object
           // to database
           user.save((err, result) => {
             if (err) {
               return res.status(400).json({
-                error: "Password reset failed. Please try again"
-              })
+                error: "Password reset failed. Please try again",
+              });
             }
             res.json({
-              message:"Your password has been updated. You may proceed to login with your new credentials"
-            })
-          })
+              message:
+                "Your password has been updated. You may proceed to login with your new credentials",
+            });
+          });
         });
       }
     );
   }
 };
 
-
 // Custom middleware for controlling link update and delete functionalities of non-admin users
 // Users that are not admin should only be able to update or delete their own links
-// This middleware prevents a user to modify links posted by others (e.g., through postman, etc.)
-exports.CanUpdateDeleteLink = (req, res, next) =>{
+// This middleware prevents a user from modifying links posted by others (e.g., through postman, etc.)
+exports.CanUpdateDeleteLink = (req, res, next) => {
   // This middleware only runs when updating or deleting links
-  // and by that time we have access to id on req
-  const {id} =req.params;
-  Link.findOne({_id:id}).exec((err, data) => {
+  // and by that time we have access to id on params
+  const { id } = req.params;
+  Link.findOne({ _id: id }).exec((err, data) => {
     if (err) {
       return res.status(400).json({
-        error: "Could not find link"
-      })
+        error: "Could not find link",
+      });
     }
-    let authorizedUser = data.postedBy._id.toString() === req.user._id.toString()
+    let authorizedUser =
+      data.postedBy._id.toString() === req.user._id.toString();
 
     if (!authorizedUser) {
       return res.status(401).json({
-        error:"You are not authorize to access this resource"
-      })
+        error: "You are not authorize to access this resource",
+      });
     }
     next();
-  })
-}
+  });
+};
