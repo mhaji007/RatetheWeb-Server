@@ -1,5 +1,19 @@
 const Link = require("../models/link");
+const User = require("../models/user");
+const Category = require("../models/category");
+const AWS = require("aws-sdk");
 const slugify = require("slugify");
+const { linkPublishedParams } = require("../helpers/email");
+
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
+
+// Create a new instance of SES with specified config from SES docs
+const ses = new AWS.SES({ apiVersion: "2010-12-01" });
+
 
 // Endpoint for creating a link
 exports.create = (req, res) => {
@@ -29,6 +43,41 @@ exports.create = (req, res) => {
       });
     }
     res.json(data);
+
+    // Find all users in the category
+    // (all users whose favorite category is same as the created link's category)
+    // look through the array of categories for user if those categories are
+    // included in the category array of link created, return those users
+    User.find({ categories: { $in: categories } }).exec((err, users) => {
+      console.log(users);
+      if (err) {
+        console.log("Error finding users to send email on link publish");
+        throw new Error(err);
+      }
+      Category.find({ _id: { $in: categories } }).exec((err, result) => {
+        // data is the created link
+        // we need to send back not only data
+        // bu also the category in which this link is published
+        // therefore we add the result(the category) as a property
+        // on data
+        data.categories = result;
+
+        for (let i = 0; i < users.length; i++) {
+          const params = linkPublishedParams(users[i].email, data);
+          const sendEmail = ses.sendEmail(params).promise();
+
+          sendEmail
+            .then((success) => {
+              console.log("email submitted to SES ", success);
+              return;
+            })
+            .catch((failure) => {
+              console.log("error on email submitted to SES  ", failure);
+              return;
+            });
+        }
+      });
+    });
   });
 };
 // Endpoint for retrieving all the links
@@ -40,19 +89,19 @@ exports.list = (req, res) => {
   let skip = req.body.skip ? parseInt(req.body.skip) : 0;
 
   Link.find({})
-  .populate("postedBy", "name")
-  .populate("categories", "name slug")
-  .sort({createdAt: -1})
-  .skip(skip)
-  .limit(limit)
-  .exec((err, data) => {
-    if(err) {
-      return res.status(400).json({
-        error: "Could not list links"
-      })
-    }
-    res.json(data);
-  })
+    .populate("postedBy", "name")
+    .populate("categories", "name slug")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .exec((err, data) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Could not list links",
+        });
+      }
+      res.json(data);
+    });
 };
 
 exports.read = (req, res) => {

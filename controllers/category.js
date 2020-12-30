@@ -260,6 +260,7 @@ exports.read = (req, res) => {
     .populate("postedBy", "_id name username")
     .exec((err, category) => {
       if (err) {
+        console.log(err);
         return res.status(400).json({
           error: "Category could not load",
         });
@@ -281,6 +282,7 @@ exports.read = (req, res) => {
         .skip(skip)
         .exec((err, links) => {
           if (err) {
+            console.log(err)
             return res.status(400).json({
               error: "Could not load associated links"
             })
