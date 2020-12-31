@@ -10,7 +10,11 @@ const {
 } = require("../controllers/auth");
 
 // Import controllers
-const {read} = require("../controllers/user");
+const {read, update} = require("../controllers/user");
+
+// Import validators
+const {userUpdateValidator} = require("../validators/auth");
+const {runValidation} = require("../validators")
 
 
 // Routes
@@ -26,6 +30,7 @@ const {read} = require("../controllers/user");
 // is run
 router.get("/user", requireSignin, authMiddleWare, read);
 router.get("/admin", requireSignin, adminMiddleWare, read);
+router.put("/user", userUpdateValidator, runValidation, requireSignin, adminMiddleWare, update);
 
 
 // In node any file created is
