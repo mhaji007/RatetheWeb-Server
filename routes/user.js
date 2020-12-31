@@ -30,7 +30,7 @@ const {runValidation} = require("../validators")
 // is run
 router.get("/user", requireSignin, authMiddleWare, read);
 router.get("/admin", requireSignin, adminMiddleWare, read);
-router.put("/user", userUpdateValidator, runValidation, requireSignin, adminMiddleWare, update);
+router.put("/user", userUpdateValidator, runValidation, requireSignin, authMiddleWare, update);
 
 
 // In node any file created is
