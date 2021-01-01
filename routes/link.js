@@ -28,6 +28,8 @@ const {
   update,
   remove,
   clickCount,
+  popular,
+  popularInCategory
 } = require("../controllers/link");
 
 // Routes
@@ -47,6 +49,9 @@ router.post(
 router.post("/links", requireSignin, adminMiddleWare, list);
 
 router.put("/click-count", clickCount);
+
+router.get('/link/popular', popular)
+router.get('/link/popular/:category', popularInCategory)
 
 router.get("/link/:id", read);
 router.put(

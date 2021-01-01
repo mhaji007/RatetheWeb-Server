@@ -14,7 +14,6 @@ AWS.config.update({
 // Create a new instance of SES with specified config from SES docs
 const ses = new AWS.SES({ apiVersion: "2010-12-01" });
 
-
 // Endpoint for creating a link
 exports.create = (req, res) => {
   const { title, url, categories, type, medium } = req.body;
@@ -168,4 +167,43 @@ exports.clickCount = (req, res) => {
       res.json(result);
     }
   );
+};
+
+exports.popular = (req, res) => {
+  Link.find()
+    .populate("postedBy", "name")
+    .sort({ clicks: -1 })
+    .limit(3)
+    .exec((err, links) => {
+      if (err) {
+        return res.status(400).json({
+          error: "Links not found",
+        });
+      }
+      res.json(links);
+    });
+};
+
+exports.popularInCategory = (req, res) => {
+  const { slug } = req.params;
+  console.log(slug);
+  Category.findOne({ slug }).exec((err, category) => {
+    if (err) {
+      return res.status(400).json({
+        error: "Could not load categories",
+      });
+    }
+
+    Link.find({ categories: category })
+      .sort({ clicks: -1 })
+      .limit(3)
+      .exec((err, links) => {
+        if (err) {
+          return res.status(400).json({
+            error: "Links not found",
+          });
+        }
+        res.json(links);
+      });
+  });
 };
